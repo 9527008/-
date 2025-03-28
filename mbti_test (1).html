@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI 测试</title>
+    <style>
+        :root {
+            --bg-gradient-start: #f9d5e5;
+            --bg-gradient-end: #d6eaf8;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --button-bg: #f8bbd0;
+            --button-hover: #f48fb1;
+            --progress-default: #e0e0e0;
+            --progress-completed: #ff9a9a;
+            --result-bg-start: #ffd180;
+            --result-bg-end: #81d4fa;
+            --border-radius: 15px;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', '华文彩云', sans-serif;
+            background: linear-gradient(to bottom, var(--bg-gradient-start), var(--bg-gradient-end));
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        #progress-bar {
+            width: 80%;
+            max-width: 600px;
+            background-color: var(--progress-default);
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        #progress {
+            width: 0%;
+            height: 30px;
+            background-color: var(--progress-completed);
+            border-radius: var(--border-radius);
+            transition: width 0.3s ease;
+        }
+
+        #question-card {
+            background-color: var(--card-bg);
+            box-shadow: var(--card-shadow);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        #progress-text {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+        }
+
+        .option {
+            background-color: var(--button-bg);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 15px 30px;
+            margin: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option:active {
+            transform: scale(0.95);
+        }
+
+        #result {
+            display: none;
+            background: linear-gradient(to bottom, var(--result-bg-start), var(--result-bg-end));
+            border-radius: 30px;
+            padding: 40px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            font-family: '微软雅黑', '幼圆', sans-serif;
+        }
+
+        #restart {
+            background-color: var(--button-bg);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 15px 30px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #restart:active {
+            transform: scale(0.95);
+        }
+
+        .firework {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: firework 1s ease-out infinite;
+        }
+
+        @keyframes firework {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(10);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>MBTI 测试</h1>
+    <div id="progress-bar">
+        <div id="progress"></div>
+    </div>
+    <div id="question-card">
+        <div id="progress-text">0/100</div>
+        <p id="question"></p>
+        <button class="option" id="option1" onclick="selectOption(0)"></button>
+        <button class="option" id="option2" onclick="selectOption(1)"></button>
+    </div>
+    <div id="result">
+        <h2 id="result-title"></h2>
+        <p id="result-description"></p>
+        <button id="restart" onclick="restartTest()">再试一次</button>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "当你参加社交活动时，你通常是？",
+                options: ["主动与人交流，结识新朋友", "更愿意和熟悉的人待在一起"],
+                answer: null
+            },
+            {
+                question: "在做决策时，你更倾向于？",
+                options: ["依靠自己的思考和判断", "征求他人的意见和建议"],
+                answer: null
+            },
+            {
+                question: "你更喜欢哪种类型的电影？",
+                options: ["动作、冒险类", "情感、剧情类"],
+                answer: null
+            },
+            {
+                question: "当你面对压力时，你会？",
+                options: ["积极寻找解决办法", "需要一些时间独处来调整"],
+                answer: null
+            },
+            {
+                question: "你在学习新事物时，更倾向于？",
+                options: ["实践中学习", "先理论学习再实践"],
+                answer: null
+            },
+            {
+                question: "你更喜欢和什么样的人一起工作？",
+                options: ["充满活力、有创意的人", "稳重、可靠的人"],
+                answer: null
+            },
+            {
+                question: "你更注重生活中的？",
+                options: ["新鲜刺激的体验", "稳定和安全感"],
+                answer: null
+            },
+            {
+                question: "在团队中，你通常扮演的角色是？",
+                options: ["领导者", "支持者"],
+                answer: null
+            },
+            {
+                question: "你更喜欢哪种休闲方式？",
+                options: ["户外运动", "在家看书或看电视"],
+                answer: null
+            },
+            {
+                question: "当你有一个想法时，你会？",
+                options: ["马上行动", "先计划好再行动"],
+                answer: null
+            },
+            {
+                question: "你在旅行时，更喜欢？",
+                options: ["提前规划好行程", "随性自由地探索"],
+                answer: null
+            },
+            {
+                question: "你在面对冲突时，通常会？",
+                options: ["直接表达自己的观点", "尽量避免冲突"],
+                answer: null
+            },
+            {
+                question: "你更喜欢和朋友一起？",
+                options: ["参加热闹的聚会", "进行安静的聊天"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更看重？",
+                options: ["知识的实用性", "知识的趣味性"],
+                answer: null
+            },
+            {
+                question: "你在工作中，更倾向于？",
+                options: ["独立完成任务", "与团队合作完成任务"],
+                answer: null
+            },
+            {
+                question: "你在购物时，更注重？",
+                options: ["商品的品质", "商品的价格"],
+                answer: null
+            },
+            {
+                question: "你在做事情时，更习惯？",
+                options: ["按照计划进行", "随机应变"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["充满激情地迎接挑战", "谨慎地评估挑战"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更倾向于？",
+                options: ["主动与人建立联系", "等待别人来联系自己"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更看重？",
+                options: ["职业的发展前景", "职业的稳定性"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["个人的兴趣爱好", "家庭和朋友的关系"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["坚持不懈地克服困难", "寻求他人的帮助"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["自己摸索学习", "参加培训课程学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["活跃气氛", "倾听他人"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["理性分析", "直觉判断"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["积极适应变化", "对变化感到不安"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["团队的效率", "团队的和谐"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["刺激的活动", "轻松的活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["制定详细的计划", "随遇而安"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["通过运动释放压力", "通过听音乐释放压力"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["阅读书籍学习", "观看视频学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["成为焦点", "默默观察"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["结果的好坏", "过程的体验"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["勇于尝试新方法", "坚持使用熟悉的方法"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["真诚的交流", "表面的礼貌"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["有挑战性的职业", "安稳的职业"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["个人的成长", "生活的品质"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["从失败中吸取教训", "避免再次尝试"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["与他人合作学习", "独自学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["表达自己的观点", "理解他人的观点"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["事实和数据", "个人的感受"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["主动推动变化", "被动接受变化"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["个人的贡献", "团队的整体利益"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["集体活动", "个人活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["早睡早起", "晚睡晚起"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["吃美食缓解压力", "睡一觉缓解压力"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["向他人请教学习", "自己研究学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["结交新朋友", "和老朋友相聚"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["长期的影响", "短期的效果"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["全力以赴", "留有余地"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["共同的兴趣爱好", "相似的价值观"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["有创意的职业", "传统的职业"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["精神上的满足", "物质上的享受"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["乐观面对", "悲观消极"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["快速学习", "深入学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["幽默风趣", "沉稳内敛"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["专家的意见", "自己的判断"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["拥抱变化", "抗拒变化"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["合作的效率", "合作的氛围"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["室内活动", "室外活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["井井有条", "不拘小节"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["运动减压", "冥想减压"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["系统学习", "碎片化学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["参与话题讨论", "在一旁倾听"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["决策的速度", "决策的质量"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["主动挑战", "等待机会"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["沟通的深度", "沟通的广度"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["高收入的职业", "有意义的职业"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["个人的成就", "家庭的幸福"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["勇往直前", "退缩放弃"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["多实践学习", "多理论学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["带动气氛", "调节气氛"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["逻辑推理", "情感因素"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["积极应对变化", "逃避变化"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["个人的荣誉", "团队的荣誉"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["文化活动", "体育活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["计划消费", "随意消费"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["找人倾诉减压", "自己消化减压"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["参加讲座学习", "在线学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["分享自己的经历", "倾听他人的经历"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["决策的灵活性", "决策的稳定性"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["挑战自我极限", "保持舒适区"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["朋友的数量", "朋友的质量"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["自主创业", "打工就业"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["生活的多样性", "生活的规律性"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["寻找新的解决方案", "沿用旧的解决方案"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["学习热门技能", "学习冷门技能"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["说服他人", "被他人说服"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["数据分析", "主观判断"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["主动适应新环境", "怀念旧环境"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["个人的成长空间", "团队的成长空间"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["艺术活动", "科技活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["早起锻炼", "晚上锻炼"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["旅游放松", "宅家休息"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["参加培训学习", "自学"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["领导团队活动", "参与团队活动"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["决策的创新性", "决策的保守性"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["挑战未知领域", "巩固已知领域"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["朋友的才华", "朋友的品德"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["新兴行业", "传统行业"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["生活的品质感", "生活的实用性"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["坚持不懈地努力", "轻易放弃"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["学习多种技能", "专注一种技能"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["组织活动", "参与活动"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["经验判断", "理性分析"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["主动创造变化", "适应变化"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["个人的利益", "团队的利益"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["音乐活动", "电影活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["整洁有序", "随意自在"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["做手工减压", "玩游戏减压"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["参加研讨会学习", "阅读书籍学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["展示自己的才艺", "欣赏他人的才艺"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["决策的长远影响", "决策的短期效果"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["勇于突破自我", "保持现状"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["朋友的真诚", "朋友的财富"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["有发展潜力的职业", "稳定的职业"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["个人的兴趣追求", "家庭的责任"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["积极寻求帮助", "独自解决问题"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["学习理论知识", "学习实践技能"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["社交礼仪", "社交技巧"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["直觉", "逻辑"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["主动改变自己", "等待环境改变"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["个人的表现", "团队的协作"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["户外活动", "室内活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["规律作息", "自由作息"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["写日记减压", "运动减压"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["在线课程学习", "线下课程学习"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["结识各行各业的人", "和熟悉的人交流"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["决策的可行性", "决策的创新性"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["挑战高难度任务", "选择简单任务"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["朋友的智慧", "朋友的善良"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["有挑战性的工作", "安稳的工作"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["个人的成长进步", "生活的舒适度"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["坚持不懈地克服", "轻易放弃努力"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["快速入门", "深入精通"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["社交应酬", "真诚交流"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["数据分析", "个人经验"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["积极拥抱变化", "抗拒变化趋势"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["个人的利益诉求", "团队的共同目标"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["文化娱乐", "体育健身"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["精打细算", "随意消费"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["旅游放松身心", "在家休息调整"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["参加培训课程", "自学研究"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["成为社交焦点", "默默观察他人"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["决策的灵活性", "决策的稳定性"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["挑战未知领域", "巩固已有成果"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["朋友的才华能力", "朋友的品德修养"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["新兴行业发展", "传统行业稳定"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["生活的品质享受", "生活的实用需求"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["坚持不懈努力", "轻易放弃尝试"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["学习多种技能", "专注一门技能"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["组织社交活动", "参与社交活动"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["经验判断", "理性分析"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["主动创造变化", "适应环境变化"],
+                answer: null
+            },
+            {
+                question: "你在与人合作时，更注重？",
+                options: ["个人的利益收获", "团队的整体利益"],
+                answer: null
+            },
+            {
+                question: "你在选择娱乐活动时，更倾向于？",
+                options: ["音乐艺术活动", "体育健身活动"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更习惯？",
+                options: ["整洁有序的生活", "随意自在的生活"],
+                answer: null
+            },
+            {
+                question: "你在面对压力时，会？",
+                options: ["做手工缓解压力", "玩游戏放松心情"],
+                answer: null
+            },
+            {
+                question: "你在学习新知识时，更倾向于？",
+                options: ["参加研讨会学习", "阅读书籍获取知识"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更愿意？",
+                options: ["展示自己的才艺风采", "欣赏他人的才艺表演"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更注重？",
+                options: ["决策的长远影响", "决策的短期效果"],
+                answer: null
+            },
+            {
+                question: "你在面对挑战时，会？",
+                options: ["勇于突破自我局限", "保持现状稳步发展"],
+                answer: null
+            },
+            {
+                question: "你在与人交往中，更看重？",
+                options: ["朋友的真诚相待", "朋友的财富地位"],
+                answer: null
+            },
+            {
+                question: "你在选择职业时，更倾向于？",
+                options: ["有发展潜力的职业道路", "稳定的职业岗位"],
+                answer: null
+            },
+            {
+                question: "你在生活中，更注重？",
+                options: ["个人的兴趣追求目标", "家庭的责任担当义务"],
+                answer: null
+            },
+            {
+                question: "你在面对困难时，会？",
+                options: ["积极寻求帮助支持", "独自解决问题困难"],
+                answer: null
+            },
+            {
+                question: "你在学习新技能时，更倾向于？",
+                options: ["学习理论知识体系", "学习实践操作技能"],
+                answer: null
+            },
+            {
+                question: "你在社交场合中，更擅长？",
+                options: ["社交礼仪规范", "社交技巧运用"],
+                answer: null
+            },
+            {
+                question: "你在做决策时，更依赖？",
+                options: ["直觉判断", "逻辑推理"],
+                answer: null
+            },
+            {
+                question: "你在面对变化时，会？",
+                options: ["主动改变自己适应", "等待环境改变跟随"],
